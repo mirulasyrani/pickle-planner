@@ -39,7 +39,7 @@ export function SessionView() {
   const {
     sessions, players, matches,
     createSession, updateSession, deleteSession, setActiveSession,
-    addPlannedMatch, removePlannedMatch, launchPlannedMatch, markPlayerAbsent,
+    addPlannedMatch, removePlannedMatch, clearPlannedMatches, launchPlannedMatch, markPlayerAbsent,
     setNotificationGranted, activeSessionId,
   } = useStore();
 
@@ -95,6 +95,7 @@ export function SessionView() {
           onDelete={() => { deleteSession(activeSession.id); }}
           onAddPlanned={(tA, tB, bo) => addPlannedMatch(activeSession.id, tA, tB, bo)}
           onRemovePlanned={(pmId) => removePlannedMatch(activeSession.id, pmId)}
+          onClearAll={() => clearPlannedMatches(activeSession.id)}
           onLaunch={(pmId) => launchPlannedMatch(activeSession.id, pmId)}
           onMarkAbsent={(pId, absent) => markPlayerAbsent(activeSession.id, pId, absent)}
           onNotificationGranted={(g) => setNotificationGranted(activeSession.id, g)}
@@ -225,7 +226,7 @@ function SessionForm({
 // ── Session detail ───────────────────────────────────────────────────────────
 function SessionDetail({
   session, allPlayers, allMatches,
-  onUpdate, onDelete, onAddPlanned, onRemovePlanned, onLaunch, onMarkAbsent, onNotificationGranted,
+  onUpdate, onDelete, onAddPlanned, onRemovePlanned, onClearAll, onLaunch, onMarkAbsent, onNotificationGranted,
 }: {
   session: Session;
   allPlayers: { id: string; name: string }[];
@@ -234,6 +235,7 @@ function SessionDetail({
   onDelete: () => void;
   onAddPlanned: (tA: Team, tB: Team, bo: 1 | 3 | 5) => void;
   onRemovePlanned: (pmId: string) => void;
+  onClearAll: () => void;
   onLaunch: (pmId: string) => void;
   onMarkAbsent: (pId: string, absent: boolean) => void;
   onNotificationGranted: (g: boolean) => void;
@@ -241,6 +243,7 @@ function SessionDetail({
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const confirmedPlayers = allPlayers.filter((p) => session.confirmedPlayerIds.includes(p.id));
   const absentIds = session.absentPlayerIds ?? [];
@@ -381,7 +384,24 @@ function SessionDetail({
         icon={<Swords size={14} />}
         expanded={expanded === 'matches'}
         onToggle={() => setExpanded(expanded === 'matches' ? null : 'matches')}
-
+        action={
+          session.plannedMatches.length > 0
+            ? confirmClear
+              ? (
+                <span className="clear-all-confirm">
+                  Clear all?&nbsp;
+                  <button className="btn-link danger" onClick={() => { onClearAll(); setConfirmClear(false); }}>Yes</button>
+                  &nbsp;/&nbsp;
+                  <button className="btn-link" onClick={() => setConfirmClear(false)}>No</button>
+                </span>
+              )
+              : (
+                <button className="btn-link danger" onClick={() => setConfirmClear(true)}>
+                  Clear all
+                </button>
+              )
+            : undefined
+        }
       >
         {session.plannedMatches.length === 0 && (
           <p className="empty-hint" style={{ marginTop: 8, fontSize: '0.82rem' }}>No matches queued yet — hit Generate above to fill the queue.</p>

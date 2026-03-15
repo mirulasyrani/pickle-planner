@@ -986,3 +986,18 @@ html, body, #root {
 .sstats-num-col.loss-col { color: var(--accent-red, #fc8181); }
 .sstats-num-col.diff-col.pos { color: var(--accent-green); }
 .sstats-num-col.diff-col.neg { color: var(--accent-red, #fc8181); }
+
+/* ── Clear-all inline link buttons ──────────────────────────────────────────── */
+.btn-link {
+  background: none; border: none; padding: 0;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  color: var(--text-muted); text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.btn-link:hover { color: var(--text-primary); }
+.btn-link.danger { color: var(--accent-red, #fc8181); }
+.btn-link.danger:hover { color: #ff6b6b; }
+.clear-all-confirm {
+  font-size: 0.78rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 2px;
+}

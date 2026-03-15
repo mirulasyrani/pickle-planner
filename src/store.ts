@@ -28,6 +28,7 @@ interface PickleState {
   setActiveSession: (id: string | null) => void;
   addPlannedMatch: (sessionId: string, teamA: Team, teamB: Team, bestOf: 1 | 3 | 5) => void;
   removePlannedMatch: (sessionId: string, plannedMatchId: string) => void;
+  clearPlannedMatches: (sessionId: string) => void;
   launchPlannedMatch: (sessionId: string, plannedMatchId: string) => void;
   markPlayerAbsent: (sessionId: string, playerId: string, absent: boolean) => void;
   setNotificationGranted: (sessionId: string, granted: boolean) => void;
@@ -275,6 +276,20 @@ export const useStore = create<PickleState>()(
               ? { ...sess, plannedMatches: sess.plannedMatches.filter((pm) => pm.id !== plannedMatchId) }
               : sess
           ),
+        }));
+      },
+
+      clearPlannedMatches: (sessionId) => {
+        set((s) => ({
+          sessions: s.sessions.map((sess) => {
+            if (sess.id !== sessionId) return sess;
+            // Keep any live matches (they have a real matchId that isn't complete yet)
+            const liveMatchIds = new Set(s.matches.filter((m) => !m.isComplete).map((m) => m.id));
+            return {
+              ...sess,
+              plannedMatches: sess.plannedMatches.filter((pm) => pm.matchId && liveMatchIds.has(pm.matchId)),
+            };
+          }),
         }));
       },
 
