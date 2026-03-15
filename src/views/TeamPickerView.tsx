@@ -103,8 +103,9 @@ export function TeamPickerView() {
   const [bestOf, setBestOf] = useState<1 | 3 | 5>(1);
 
   // ── Random mode ──
-  const [randomTeamA, setRandomTeamA] = useState<Team | null>(null);
-  const [randomTeamB, setRandomTeamB] = useState<Team | null>(null);
+  const [randomTeams, setRandomTeams] = useState<Team[]>([]);
+  const [pickedA, setPickedA] = useState<string | null>(null);
+  const [pickedB, setPickedB] = useState<string | null>(null);
 
   // ── Manual mode ──
   const [teamAIds, setTeamAIds] = useState<string[]>([]);
@@ -123,10 +124,15 @@ export function TeamPickerView() {
   const handleRandomise = useCallback(() => {
     if (players.length < teamSize * 2) return;
     const shuffled = shuffle(players);
-    const a = shuffled.slice(0, teamSize);
-    const b = shuffled.slice(teamSize, teamSize * 2);
-    setRandomTeamA({ id: makeId(), name: 'Team A', playerIds: a.map((p) => p.id) });
-    setRandomTeamB({ id: makeId(), name: 'Team B', playerIds: b.map((p) => p.id) });
+    const teamCount = Math.floor(shuffled.length / teamSize);
+    const teams: Team[] = Array.from({ length: teamCount }, (_, i) => ({
+      id: makeId(),
+      name: `Team ${i + 1}`,
+      playerIds: shuffled.slice(i * teamSize, (i + 1) * teamSize).map((p) => p.id),
+    }));
+    setRandomTeams(teams);
+    setPickedA(teams[0]?.id ?? null);
+    setPickedB(teams[1]?.id ?? null);
   }, [players, teamSize]);
 
   function getPlayerById(id: string): Player | undefined {
@@ -152,8 +158,10 @@ export function TeamPickerView() {
   }
 
   function handleStartRandom() {
-    if (!randomTeamA || !randomTeamB) return;
-    startMatch(randomTeamA, randomTeamB, bestOf);
+    const tA = randomTeams.find((t) => t.id === pickedA);
+    const tB = randomTeams.find((t) => t.id === pickedB);
+    if (!tA || !tB) return;
+    startMatch(tA, tB, bestOf);
   }
 
   function handleStartManual() {
@@ -271,8 +279,9 @@ export function TeamPickerView() {
             <select className="setting-select" value={teamSize} onChange={(e) => {
               setTeamSize(Number(e.target.value));
               resetManual();
-              setRandomTeamA(null);
-              setRandomTeamB(null);
+              setRandomTeams([]);
+              setPickedA(null);
+              setPickedB(null);
               setFixtures([]);
             }}>
               <option value={1}>Singles (1v1)</option>
@@ -302,19 +311,66 @@ export function TeamPickerView() {
             <>
               <button className="btn btn-primary big-btn" onClick={handleRandomise}>
                 <Shuffle size={18} />
-                {randomTeamA ? 'Re-randomise' : 'Randomise Teams'}
+                {randomTeams.length > 0 ? 'Re-randomise' : 'Randomise Teams'}
               </button>
 
-              {randomTeamA && randomTeamB && (
+              {randomTeams.length > 0 && (
                 <>
-                  <div className="teams-preview">
-                    <TeamCard team={randomTeamA} players={players} label="Team A" color="green" />
-                    <div className="vs-badge">VS</div>
-                    <TeamCard team={randomTeamB} players={players} label="Team B" color="blue" />
+                  {/* Sitting-out notice */}
+                  {players.length % teamSize !== 0 && (
+                    <p className="empty-hint" style={{ fontSize: '0.8rem', marginTop: 0 }}>
+                      {players.length % teamSize} player{players.length % teamSize !== 1 ? 's' : ''} sitting out (not divisible by {teamSize})
+                    </p>
+                  )}
+
+                  {/* All teams – tap to select A / B */}
+                  <p className="random-pick-hint">Tap two teams to set the matchup</p>
+                  <div className="random-teams-grid">
+                    {randomTeams.map((t) => {
+                      const isA = t.id === pickedA;
+                      const isB = t.id === pickedB;
+                      return (
+                        <button
+                          key={t.id}
+                          className={`rand-team-card ${isA ? 'picked-a' : ''} ${isB ? 'picked-b' : ''}`}
+                          onClick={() => {
+                            if (isA) { setPickedA(null); }
+                            else if (isB) { setPickedB(null); }
+                            else if (!pickedA) { setPickedA(t.id); }
+                            else if (!pickedB) { setPickedB(t.id); }
+                            else { setPickedA(t.id); }
+                          }}
+                        >
+                          <div className="rand-team-label">
+                            {isA && <span className="rand-badge a">A</span>}
+                            {isB && <span className="rand-badge b">B</span>}
+                            {t.name}
+                          </div>
+                          <div className="rand-team-players">
+                            {t.playerIds.map((id) => players.find((p) => p.id === id)?.name ?? '?').join(', ')}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <button className="btn btn-success start-btn" onClick={handleStartRandom}>
-                    Start Match <ChevronRight size={18} />
-                  </button>
+
+                  {/* Match preview */}
+                  {pickedA && pickedB && (() => {
+                    const tA = randomTeams.find((t) => t.id === pickedA)!;
+                    const tB = randomTeams.find((t) => t.id === pickedB)!;
+                    return (
+                      <>
+                        <div className="teams-preview">
+                          <TeamCard team={tA} players={players} label="Team A" color="green" />
+                          <div className="vs-badge">VS</div>
+                          <TeamCard team={tB} players={players} label="Team B" color="blue" />
+                        </div>
+                        <button className="btn btn-success start-btn" onClick={handleStartRandom}>
+                          Start Match <ChevronRight size={18} />
+                        </button>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </>

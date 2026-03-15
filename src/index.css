@@ -41,7 +41,8 @@ html, body, #root {
 /* ─── App Shell ─────────────────────────────────────────────── */
 .app {
   display: flex; flex-direction: column; height: 100dvh;
-  max-width: 520px; margin: 0 auto;
+  max-width: 520px; margin: 0 auto; width: 100%;
+  overflow: hidden;
   background: linear-gradient(160deg, #0a1020 0%, #080c18 60%, #050912 100%);
 }
 
@@ -75,7 +76,7 @@ html, body, #root {
   50%       { opacity: 0.8; box-shadow: 0 0 24px rgba(239,68,68,0.65); }
 }
 
-.app-main { flex: 1; overflow-y: auto; padding: 0 0 8px; }
+.app-main { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 0 8px; }
 
 .app-nav {
   display: flex;
@@ -103,7 +104,7 @@ html, body, #root {
 }
 
 /* ─── View ──────────────────────────────────────────────────── */
-.view { padding: 20px 18px 24px; }
+.view { padding: 20px 18px 24px; min-width: 0; overflow-x: hidden; }
 .view-title {
   font-size: 1.4rem; font-weight: 800; margin-bottom: 4px;
   letter-spacing: -0.025em;
@@ -120,6 +121,7 @@ html, body, #root {
   background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   color: var(--text); font-size: 0.95rem; padding: 11px 14px; outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 0; width: 100%;
 }
 .text-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
 .text-input.inline-edit { flex: 1; }
@@ -589,8 +591,8 @@ html, body, #root {
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.07em; color: var(--text-muted);
 }
-.form-row { display: flex; gap: 10px; }
-.form-row .form-group { flex: 1; }
+.form-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.form-row .form-group { flex: 1; min-width: min(130px, 100%); }
 .w-full { width: 100%; }
 
 .bestof-row { display: flex; gap: 6px; }
@@ -1000,4 +1002,71 @@ html, body, #root {
 .clear-all-confirm {
   font-size: 0.78rem; color: var(--text-muted);
   display: flex; align-items: center; gap: 2px;
+}
+
+/* ── Random mode – team picker pool ── */
+.random-pick-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0.5rem;
+  text-align: center;
+}
+
+.random-teams-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.rand-team-card {
+  flex: 1 1 140px;
+  max-width: 200px;
+  background: var(--surface2);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rand-team-card:hover {
+  background: var(--surface3);
+}
+.rand-team-card.picked-a {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+.rand-team-card.picked-b {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.rand-team-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.rand-badge {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 18px;
+  color: #fff;
+}
+.rand-badge.a { background: #22c55e; }
+.rand-badge.b { background: #3b82f6; }
+
+.rand-team-players {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
