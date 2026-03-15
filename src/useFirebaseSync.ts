@@ -3,64 +3,65 @@ import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { useStore } from './store';
 
-// The single Firestore document that holds all shared state
 const STATE_DOC = doc(db, 'data', 'state');
 
-// Keys synced to Firestore (UI state stays local)
-
 export function useFirebaseSync() {
-  const store = useStore();
-  const isRemoteUpdate = useRef(false);
   const initialized = useRef(false);
+  const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Suppress incoming snapshots for 2s after we write, to avoid confirmed-echo bounce-back
+  const suppressUntil = useRef(0);
 
-  // ── On mount: load remote state first, then subscribe to changes ──
+  // ── On mount: pull latest from Firestore, then listen for remote changes ──
   useEffect(() => {
-    // 1. Do an initial fetch to hydrate immediately
     getDoc(STATE_DOC).then((snap) => {
       if (snap.exists()) {
-        isRemoteUpdate.current = true;
         const data = snap.data();
         useStore.setState({
           players: data.players ?? [],
           matches: data.matches ?? [],
           sessions: data.sessions ?? [],
         });
-        isRemoteUpdate.current = false;
       } else {
-        // First device — push local data to Firestore
+        // First device ever — seed Firestore with local data
         const s = useStore.getState();
-        setDoc(STATE_DOC, {
-          players: s.players,
-          matches: s.matches,
-          sessions: s.sessions,
-        });
+        setDoc(STATE_DOC, { players: s.players, matches: s.matches, sessions: s.sessions });
       }
       initialized.current = true;
     });
 
-    // 2. Real-time listener — fires whenever another device writes
-    const unsub = onSnapshot(STATE_DOC, (snap) => {
-      if (!initialized.current) return; // skip before initial fetch resolves
-      if (!snap.exists()) return;
-      isRemoteUpdate.current = true;
-      const data = snap.data();
-      useStore.setState({
-        players: data.players ?? [],
-        matches: data.matches ?? [],
-        sessions: data.sessions ?? [],
-      });
-      isRemoteUpdate.current = false;
-    });
+    // Real-time listener — skip our own writes (pending + confirmed echo)
+    const unsub = onSnapshot(
+      STATE_DOC,
+      { includeMetadataChanges: true },
+      (snap) => {
+        if (!snap.exists()) return;
+        if (snap.metadata.hasPendingWrites) return; // local write still in flight
+        if (!initialized.current) return;
+        if (Date.now() < suppressUntil.current) return; // confirmed-write echo window
+        const data = snap.data();
+        useStore.setState({
+          players: data.players ?? [],
+          matches: data.matches ?? [],
+          sessions: data.sessions ?? [],
+        });
+      }
+    );
 
-    return () => unsub();
+    return () => {
+      unsub();
+      if (writeTimer.current) clearTimeout(writeTimer.current);
+    };
   }, []);
 
-  // ── On every local state change: push to Firestore ──
+  // ── Debounced write: waits 600ms after last change before pushing ──
   useEffect(() => {
-    if (isRemoteUpdate.current) return; // don't echo back remote updates
     if (!initialized.current) return;
 
-    const { players, matches, sessions } = store;
-    setDoc(STATE_DOC, { players, matches, sessions }, { merge: false });
-  }, [store.players, store.matches, store.sessions]);
+    if (writeTimer.current) clearTimeout(writeTimer.current);
+    writeTimer.current = setTimeout(() => {
+      suppressUntil.current = Date.now() + 2000; // ignore echoes for 2s after write
+      const { players, matches, sessions } = useStore.getState();
+      setDoc(STATE_DOC, { players, matches, sessions });
+    }, 600);
+  });
 }
