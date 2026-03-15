@@ -99,8 +99,8 @@ function buildRandom(pool: Player[], teamSize: number, bestOf: 1 | 3 | 5, count:
 export function TeamPickerView() {
   const { players, sessions, activeSessionId, startMatch, addPlannedMatch, setView } = useStore();
   const [mode, setMode] = useState<Mode>('random');
-  const [teamSize, setTeamSize] = useState(2);
-  const [bestOf, setBestOf] = useState<1 | 3 | 5>(1);
+  const teamSize = 2;
+  const bestOf: 1 | 3 | 5 = 1;
 
   // ── Random mode ──
   const [randomTeams, setRandomTeams] = useState<Team[]>([]);
@@ -273,33 +273,6 @@ export function TeamPickerView() {
           </button>
         </div>
 
-        <div className="settings-row">
-          <label className="setting-label">
-            Team size
-            <select className="setting-select" value={teamSize} onChange={(e) => {
-              setTeamSize(Number(e.target.value));
-              resetManual();
-              setRandomTeams([]);
-              setPickedA(null);
-              setPickedB(null);
-              setFixtures([]);
-            }}>
-              <option value={1}>Singles (1v1)</option>
-              <option value={2}>Doubles (2v2)</option>
-              <option value={3}>3v3</option>
-              <option value={4}>4v4</option>
-            </select>
-          </label>
-
-          <label className="setting-label">
-            Best of
-            <select className="setting-select" value={bestOf} onChange={(e) => setBestOf(Number(e.target.value) as 1 | 3 | 5)}>
-              <option value={1}>1 game</option>
-              <option value={3}>Best of 3</option>
-              <option value={5}>Best of 5</option>
-            </select>
-          </label>
-        </div>
       </div>
 
       {/* ── Random mode ── */}
@@ -522,7 +495,6 @@ export function TeamPickerView() {
                   <span className="fixture-team blue-text">
                     {f.teamB.playerIds.map((id) => players.find((p) => p.id === id)?.name ?? '?').join(' & ')}
                   </span>
-                  <span className="fixture-bo">Bo{f.bestOf}</span>
                   <button className="icon-btn icon-btn-sm" title="Re-roll this fixture" onClick={() => rerollFixture(f.id)}>
                     <RefreshCw size={11} />
                   </button>
