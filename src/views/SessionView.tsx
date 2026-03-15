@@ -352,7 +352,6 @@ function SessionDetail({
 
       {/* ── Generate schedule ── */}
       <GenerateCard
-        session={session}
         availablePlayers={availablePlayers}
         plannedMatches={session.plannedMatches}
         onGenerate={(fixtures) => {
@@ -595,9 +594,8 @@ function SessionStatsPanel({ session, allPlayers, allMatches, expanded, onToggle
 
 // ── Generate schedule card ───────────────────────────────────────────────────
 function GenerateCard({
-  session, availablePlayers, plannedMatches, onGenerate,
+  availablePlayers, plannedMatches, onGenerate,
 }: {
-  session: import('../types').Session;
   availablePlayers: { id: string; name: string }[];
   plannedMatches: import('../types').PlannedMatch[];
   onGenerate: (fixtures: import('../utils/schedule').ScheduledFixture[]) => void;
