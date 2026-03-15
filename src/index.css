@@ -124,6 +124,9 @@ html, body, #root {
   min-width: 0; width: 100%;
 }
 .text-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+input[type="date"], input[type="time"] {
+  min-width: 0; width: 100%; box-sizing: border-box; appearance: none; -webkit-appearance: none;
+}
 .text-input.inline-edit { flex: 1; }
 
 .btn {
@@ -582,6 +585,7 @@ html, body, #root {
   border: 1.5px solid var(--border); border-radius: var(--radius);
   padding: 18px; margin-bottom: 20px; box-shadow: var(--shadow);
   display: flex; flex-direction: column; gap: 14px;
+  box-sizing: border-box; overflow: hidden; max-width: 100%;
 }
 .session-form-title { font-size: 1rem; font-weight: 700; }
 
@@ -592,7 +596,7 @@ html, body, #root {
   letter-spacing: 0.07em; color: var(--text-muted);
 }
 .form-row { display: flex; flex-wrap: wrap; gap: 10px; }
-.form-row .form-group { flex: 1; min-width: min(130px, 100%); }
+.form-row .form-group { flex: 1; min-width: min(120px, 100%); box-sizing: border-box; }
 .w-full { width: 100%; }
 
 .bestof-row { display: flex; gap: 6px; }

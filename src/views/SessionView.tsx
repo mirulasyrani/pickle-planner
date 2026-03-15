@@ -140,11 +140,11 @@ function SessionForm({
         <input className="text-input w-full" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} />
       </div>
 
+      <div className="form-group">
+        <label className="form-label"><Calendar size={12} /> Date</label>
+        <input className="text-input w-full" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      </div>
       <div className="form-row">
-        <div className="form-group">
-          <label className="form-label"><Calendar size={12} /> Date</label>
-          <input className="text-input w-full" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
         <div className="form-group">
           <label className="form-label"><Clock size={12} /> Start</label>
           <input className="text-input w-full" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
