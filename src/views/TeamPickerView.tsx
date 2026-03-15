@@ -187,8 +187,7 @@ export function TeamPickerView() {
   const rrMatchCount = (() => {
     const n = bulkPool.length;
     if (n < teamSize * 2) return 0;
-    if (teamSize === 1) return (n * (n - 1)) / 2;
-    // budget = C(n,2)*2 pair-slots; each match uses 2*C(teamSize,2) pairs
+    // For 2v2: each match uses 1 unique pair, so C(n,2) total pairs = n*(n-1)/2
     return Math.floor((n * (n - 1)) / (teamSize * (teamSize - 1)));
   })();
 
