@@ -120,8 +120,6 @@ function SessionForm({
   const [date, setDate] = useState(initial?.date ?? today);
   const [time, setTime] = useState(initial?.time ?? '09:00');
   const [endTime, setEndTime] = useState(initial?.endTime ?? '');
-  const [format, setFormat] = useState<'singles' | 'doubles'>(initial?.format ?? 'doubles');
-  const [bestOf, setBestOf] = useState<1 | 3 | 5>(initial?.bestOf ?? 1);
   const [alertEnabled, setAlertEnabled] = useState(initial?.alertEnabled ?? true);
   const [alertMinutes, setAlertMinutes] = useState(initial?.alertMinutesBefore ?? 30);
   const [confirmed, setConfirmed] = useState<string[]>(initial?.confirmedPlayerIds ?? []);
@@ -131,7 +129,7 @@ function SessionForm({
   }
 
   function handleSave() {
-    onSave({ name: name.trim() || 'Session', location, date, time, endTime, format, bestOf, alertEnabled, alertMinutesBefore: alertMinutes, confirmedPlayerIds: confirmed, absentPlayerIds: initial?.absentPlayerIds ?? [] });
+    onSave({ name: name.trim() || 'Session', location, date, time, endTime, format: 'doubles', bestOf: 1, alertEnabled, alertMinutesBefore: alertMinutes, confirmedPlayerIds: confirmed, absentPlayerIds: initial?.absentPlayerIds ?? [] });
   }
 
   return (
@@ -156,20 +154,7 @@ function SessionForm({
           <input className="text-input w-full" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} placeholder="optional" />
         </div>
       </div>
-      <div className="form-group">
-        <label className="form-label">Format</label>
-        <div className="bestof-row">
-          <button className={`bestof-btn ${format === 'singles' ? 'active' : ''}`} onClick={() => setFormat('singles')}>Singles (1v1)</button>
-          <button className={`bestof-btn ${format === 'doubles' ? 'active' : ''}`} onClick={() => setFormat('doubles')}>Doubles (2v2)</button>
-        </div>
-      </div>
-      <div className="form-group">
-        <label className="form-label">Best of</label>
-        <div className="bestof-row">
-          <button className={`bestof-btn ${bestOf === 1 ? 'active' : ''}`} onClick={() => setBestOf(1)}>1 game (first to 15)</button>
-          <button className={`bestof-btn ${bestOf === 3 ? 'active' : ''}`} onClick={() => setBestOf(3)}>Best of 3</button>
-        </div>
-      </div>
+
 
       <div className="form-group">
         <label className="form-label"><MapPin size={12} /> Location</label>
@@ -492,18 +477,13 @@ function PlannedMatchRow({ pm, allPlayers, liveMatchIds, allMatches, onLaunch, o
             <span className="planned-vs">vs</span>
           )}
           <span className={`planned-team-b${isWinnerA === false ? ' team-winner' : ''}`}>{pm.teamB.name}</span>
-          {!completedMatch && <span className="planned-bestof">Bo{pm.bestOf}</span>}
         </div>
         <div className="planned-players">
           <span className="green-text">{names(pm.teamA.playerIds)}</span>
           <span className="text-muted"> · </span>
           <span className="blue-text">{names(pm.teamB.playerIds)}</span>
         </div>
-        {completedMatch && completedMatch.bestOf > 1 && (
-          <div className="planned-game-detail">
-            Games {gameWinsA}–{gameWinsB} · Points {totalA}–{totalB}
-          </div>
-        )}
+
       </div>
       <div className="planned-actions">
         {isDone ? (
@@ -622,9 +602,7 @@ function GenerateCard({
   plannedMatches: import('../types').PlannedMatch[];
   onGenerate: (fixtures: import('../utils/schedule').ScheduledFixture[]) => void;
 }) {
-  const format = session.format ?? 'doubles';
-  const teamSize = format === 'doubles' ? 2 : 1;
-  const bestOf = (session.bestOf as 1 | 3 | 5) ?? 1;
+  const teamSize = 2;
   const n = availablePlayers.length;
   const estimated = estimateFixtureCount(n, teamSize);
   const notStarted = plannedMatches.filter((pm) => pm.matchId === null).length;
@@ -633,7 +611,7 @@ function GenerateCard({
   const [generated, setGenerated] = useState(false);
 
   function handleGenerate() {
-    const fixtures = buildSocialRoundRobin(availablePlayers, teamSize, bestOf);
+    const fixtures = buildSocialRoundRobin(availablePlayers, teamSize, 1);
     onGenerate(fixtures);
     setGenerated(true);
     setTimeout(() => setGenerated(false), 2500);
@@ -646,7 +624,7 @@ function GenerateCard({
         <span>
           {n === 0
             ? 'No players confirmed yet — edit the session to add them.'
-            : `Need at least ${teamSize * 2} available players for ${format}.`}
+            : `Need at least ${teamSize * 2} players confirmed.`}
         </span>
       </div>
     );
@@ -655,8 +633,6 @@ function GenerateCard({
   return (
     <div className="generate-card">
       <div className="generate-card-info">
-        <span className="generate-badge">{format === 'doubles' ? 'Doubles' : 'Singles'}</span>
-        <span className="generate-badge">{bestOf === 1 ? '1 game to 15' : `Best of ${bestOf}`}</span>
         <span className="generate-meta">{n} players · ~{estimated} fixtures</span>
         {notStarted > 0 && !hasActive && (
           <span className="generate-warn">⚠ Replaces {notStarted} queued match{notStarted !== 1 ? 'es' : ''}</span>
