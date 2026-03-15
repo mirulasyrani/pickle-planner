@@ -8,8 +8,8 @@ const STATE_DOC = doc(db, 'data', 'state');
 export function useFirebaseSync() {
   const initialized = useRef(false);
   const writeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Suppress incoming snapshots for 2s after we write, to avoid confirmed-echo bounce-back
-  const suppressUntil = useRef(0);
+  // Track the write-ID we last sent so we can identify our own echo exactly
+  const lastWriteId = useRef('');
 
   // ── On mount: pull latest from Firestore, then listen for remote changes ──
   useEffect(() => {
@@ -24,25 +24,28 @@ export function useFirebaseSync() {
       } else {
         // First device ever — seed Firestore with local data
         const s = useStore.getState();
-        setDoc(STATE_DOC, { players: s.players, matches: s.matches, sessions: s.sessions });
+        setDoc(STATE_DOC, { players: s.players, matches: s.matches, sessions: s.sessions, _wid: '' });
       }
       initialized.current = true;
     });
 
-    // Real-time listener — skip our own writes (pending + confirmed echo)
+    // Real-time listener
     const unsub = onSnapshot(
       STATE_DOC,
       { includeMetadataChanges: true },
       (snap) => {
         if (!snap.exists()) return;
-        if (snap.metadata.hasPendingWrites) return; // local write still in flight
+        if (snap.metadata.hasPendingWrites) return; // optimistic local write — skip
         if (!initialized.current) return;
-        if (Date.now() < suppressUntil.current) return; // confirmed-write echo window
-        const data = snap.data();
+        // Skip if we have un-flushed local changes (user is mid-edit)
+        if (writeTimer.current !== null) return;
+        // Skip if this snapshot is the echo of our own last write
+        const incoming = snap.data();
+        if (incoming._wid && incoming._wid === lastWriteId.current) return;
         useStore.setState({
-          players: data.players ?? [],
-          matches: data.matches ?? [],
-          sessions: data.sessions ?? [],
+          players: incoming.players ?? [],
+          matches: incoming.matches ?? [],
+          sessions: incoming.sessions ?? [],
         });
       }
     );
@@ -59,9 +62,11 @@ export function useFirebaseSync() {
 
     if (writeTimer.current) clearTimeout(writeTimer.current);
     writeTimer.current = setTimeout(() => {
-      suppressUntil.current = Date.now() + 2000; // ignore echoes for 2s after write
+      writeTimer.current = null; // clear BEFORE setDoc so snapshot guard works correctly
+      const wid = Math.random().toString(36).slice(2, 10);
+      lastWriteId.current = wid;
       const { players, matches, sessions } = useStore.getState();
-      setDoc(STATE_DOC, { players, matches, sessions });
+      setDoc(STATE_DOC, { players, matches, sessions, _wid: wid });
     }, 600);
   });
 }
