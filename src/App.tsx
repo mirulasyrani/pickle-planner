@@ -1,4 +1,5 @@
 import { useStore } from './store';
+import { useFirebaseSync } from './useFirebaseSync';
 import { PlayersView } from './views/PlayersView';
 import { TeamPickerView } from './views/TeamPickerView';
 import { MatchView } from './views/MatchView';
@@ -16,6 +17,7 @@ const NAV_ITEMS: { id: AppView; label: string; icon: React.ReactNode }[] = [
 ];
 
 export function App() {
+  useFirebaseSync();
   const { view, setView, activeMatchId, matches, sessions } = useStore();
   const activeMatch = matches.find((m) => m.id === activeMatchId);
   const hasActiveMatch = activeMatch && !activeMatch.isComplete;
